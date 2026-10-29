@@ -1,0 +1,565 @@
+<!doctype html>
+<html lang="pl"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Karmienie węży</title>
+<style>
+/* App shell: content column + fixed bottom tab bar. Terrarium palette: moss neutrals, rust = boa, ochre = pyton */
+:root{
+  --bg:#F1F3EC; --surface:#FFFFFF; --sunk:#E6EAE0; --fg:#1B231D; --muted:#5E6A5F; --line:#D3D9CC;
+  --accent:#3F6B34; --accent-fg:#FFFFFF;
+  --boa:#A44E2B; --boa-soft:#F3E1D7; --pyt:#8A6D12; --pyt-soft:#F2EACB;
+  --warn:#B3261E; --warn-soft:#F8DEDB; --ok:#2E6B3A; --shed:#4A5FA8; --shed-soft:#E0E5F5;
+  --f:system-ui,-apple-system,"Roboto","Segoe UI",sans-serif;
+  --mono:ui-monospace,"Roboto Mono",Menlo,monospace;
+  --r:16px;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root{
+  --bg:#101511; --surface:#182019; --sunk:#0B0F0C; --fg:#E7EDE4; --muted:#93A194; --line:#2A352B;
+  --accent:#8BC47A; --accent-fg:#0E1A0B;
+  --boa:#E98A60; --boa-soft:#3A2219; --pyt:#D9B84E; --pyt-soft:#33290D;
+  --warn:#FF8A80; --warn-soft:#3B1715; --ok:#8BC47A; --shed:#9FB0F0; --shed-soft:#1D2440; color-scheme:dark }}
+
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0}
+[hidden]{display:none!important}
+main>section{display:grid;gap:18px;min-width:0}
+body{background:var(--bg);color:var(--fg);font-family:var(--f);font-size:15px;line-height:1.45}
+main{max-width:640px;margin:0 auto;padding:16px max(16px,env(safe-area-inset-right)) calc(96px + env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left));display:grid;gap:18px}
+h1,h2,h3{margin:0;letter-spacing:-.01em;text-wrap:balance}
+h1{font-size:1.6rem;font-weight:800}
+h2{font-size:1.1rem;font-weight:750}
+h3{font-size:1.05rem;font-weight:700}
+.eyebrow{font-size:.7rem;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:650}
+.muted{color:var(--muted)} .small{font-size:.85rem}
+.num{font-variant-numeric:tabular-nums}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.between{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;display:grid;gap:12px;min-width:0}
+button{font:inherit;cursor:pointer;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--fg);padding:10px 14px;font-weight:650;min-height:44px}
+button:active{transform:scale(.98)}
+button.primary{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+button.ghost{background:transparent;border-color:transparent;color:var(--muted)}
+button.danger{color:var(--warn)}
+button.sm{min-height:34px;padding:5px 10px;font-size:.85rem}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+input,select,textarea{font:inherit;color:var(--fg);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:9px 10px;min-width:0;min-height:42px}
+textarea{width:100%;min-height:90px;font-family:var(--mono);font-size:.8rem}
+label.f{display:grid;gap:4px;font-size:.8rem;color:var(--muted)}
+.pill{display:inline-block;font-size:.75rem;font-weight:650;padding:3px 10px;border-radius:999px;background:var(--sunk);color:var(--muted)}
+.pill.due{background:var(--warn-soft);color:var(--warn)}
+.pill.ok{color:var(--ok)}
+.pill.shed{background:var(--shed-soft);color:var(--shed)}
+.dot{width:10px;height:10px;border-radius:50%;display:inline-block;flex:none}
+.dot.boa{background:var(--boa)} .dot.pyt{background:var(--pyt)}
+
+/* countdown cards */
+.cd{--c:var(--accent);--soft:var(--sunk);background:var(--soft);border-radius:20px;padding:16px;display:grid;gap:10px}
+.cd.boa{--c:var(--boa);--soft:var(--boa-soft)} .cd.pyt{--c:var(--pyt);--soft:var(--pyt-soft)}
+.cd .who{display:flex;align-items:center;gap:8px;font-weight:700}
+.cd .big{font-weight:850;font-size:3.4rem;line-height:1;color:var(--c);font-variant-numeric:tabular-nums;letter-spacing:-.03em}
+.cd .big small{font-size:1rem;font-weight:650;color:var(--fg);margin-left:6px;letter-spacing:0}
+.cd.due .big{color:var(--warn)} .cd.shedding .big{color:var(--shed);font-size:2.2rem}
+.cd .acts{display:grid;grid-template-columns:2fr 1fr 1fr;gap:8px}
+.cd .acts button{padding:10px 6px}
+.summary{font-size:.95rem}
+
+/* agenda */
+.agenda{display:grid;gap:0}
+.ag{display:grid;grid-template-columns:76px 14px 1fr auto;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid var(--line)}
+.ag:last-child{border-bottom:0}
+.ag>span{min-width:0}
+.ag .d{font-variant-numeric:tabular-nums;font-weight:650}
+.ag .late{color:var(--warn);font-weight:650}
+
+/* calendar */
+.cal-nav{display:flex;align-items:center;justify-content:space-between}
+.cal-nav h3{text-transform:capitalize}
+.g7{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+.dow{font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);text-align:center}
+.day{aspect-ratio:1/1;border-radius:10px;border:0;padding:4px 2px;min-height:0;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:.85rem;font-weight:500;background:var(--bg)}
+.day.out{opacity:.35}
+.day.today{box-shadow:inset 0 0 0 2px var(--accent);font-weight:800}
+.day.sel{background:var(--accent);color:var(--accent-fg)}
+.marks{display:flex;gap:2px;flex-wrap:wrap;justify-content:center}
+.m{width:7px;height:7px;border-radius:50%}
+.m.boa{background:var(--boa)} .m.pyt{background:var(--pyt)}
+.m.plan{background:transparent;border:2px solid}
+.m.plan.boa{border-color:var(--boa)} .m.plan.pyt{border-color:var(--pyt)}
+.m.shed{background:var(--shed);border-radius:2px}
+.day.sel .m.plan{border-color:var(--accent-fg)}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:.78rem;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+
+/* snake detail */
+.snake{padding:0;overflow:hidden;gap:0}
+.snake>.in{padding:16px;display:grid;gap:14px}
+.stripe{height:6px}
+.snake.boa .stripe{background:repeating-linear-gradient(90deg,var(--boa) 0 18px,var(--boa-soft) 18px 26px)}
+.snake.pyt .stripe{background:repeating-linear-gradient(90deg,var(--pyt) 0 12px,var(--pyt-soft) 12px 16px,var(--pyt) 16px 30px,var(--pyt-soft) 30px 38px)}
+.specs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;background:var(--line);border-radius:12px;overflow:hidden}
+.spec{background:var(--surface);padding:9px 12px}
+.spec b{display:block;font-size:.98rem;font-variant-numeric:tabular-nums}
+.advice{background:var(--sunk);border-radius:12px;padding:10px 12px;font-size:.88rem;display:grid;gap:4px}
+.advice .warn{color:var(--warn);font-weight:650}
+.chart svg{width:100%;height:auto;display:block}
+.chart .ln{fill:none;stroke-width:2.5;stroke-linejoin:round;stroke-linecap:round}
+.chart.boa .ln,.chart.boa .pt{stroke:var(--boa)} .chart.pyt .ln,.chart.pyt .pt{stroke:var(--pyt)}
+.chart .pt{fill:var(--surface);stroke-width:2.5}
+.chart .grid{stroke:var(--line);stroke-width:1}
+.chart text{fill:var(--muted);font-size:10px;font-family:var(--f)}
+.form{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;align-items:end}
+.form .full{grid-column:1/-1}
+.hist{list-style:none;margin:0;padding:0;display:grid}
+.hist li{display:grid;grid-template-columns:64px 1fr auto;gap:8px;align-items:center;padding:6px 0;border-bottom:1px dashed var(--line);font-size:.9rem}
+.hist li:last-child{border-bottom:0}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.stat{background:var(--sunk);border-radius:12px;padding:8px 10px}
+.stat b{display:block;font-size:1.1rem;font-variant-numeric:tabular-nums}
+details>summary{cursor:pointer;font-weight:650;list-style:none;padding:4px 0}
+details>summary::-webkit-details-marker{display:none}
+details>summary::after{content:" ›";color:var(--muted)}
+details[open]>summary::after{content:" ⌄"}
+.tips ul{margin:0;padding-left:18px;display:grid;gap:4px;font-size:.9rem}
+
+/* tab bar */
+nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:10;background:var(--surface);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(4,1fr);padding:6px max(8px,env(safe-area-inset-right)) calc(6px + env(safe-area-inset-bottom)) max(8px,env(safe-area-inset-left))}
+nav.tabs button{border:0;background:transparent;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:.72rem;font-weight:650;color:var(--muted);padding:6px 0;min-height:52px;border-radius:14px}
+nav.tabs button svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+nav.tabs button.on{color:var(--accent);background:var(--sunk)}
+.toast{position:fixed;left:16px;right:16px;bottom:calc(84px + env(safe-area-inset-bottom));margin:0 auto;max-width:480px;background:var(--fg);color:var(--bg);padding:8px 8px 8px 16px;border-radius:14px;font-weight:600;font-size:.9rem;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:48px}
+.toast button{background:transparent;border:0;color:var(--bg);text-decoration:underline;min-height:36px}
+.confirm{background:var(--warn-soft);border-radius:12px;padding:10px 12px;display:grid;gap:8px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head><body>
+
+<main>
+  <section id="tab-today"></section>
+  <section id="tab-cal" hidden></section>
+  <section id="tab-snakes" hidden></section>
+  <section id="tab-settings" hidden></section>
+</main>
+
+<nav class="tabs" aria-label="Zakładki">
+  <button type="button" data-tab="today"><svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2M9 2h6"/></svg>Dziś</button>
+  <button type="button" data-tab="cal"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Kalendarz</button>
+  <button type="button" data-tab="snakes"><svg viewBox="0 0 24 24"><path d="M16 6c0-3-8-3-8 1s8 4 8 8-7 5-9 2"/><circle cx="16" cy="6" r="1.5"/></svg>Węże</button>
+  <button type="button" data-tab="settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-2.9-1.2l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.7 1.7 0 0 0 3 14H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.2-2.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.7 1.7 0 0 0 10 3V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 2.9 1.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0 1.2 2.9H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>Ustawienia</button>
+</nav>
+
+<div class="toast" id="toast" hidden><span id="toastMsg"></span><button type="button" id="toastUndo" hidden>Cofnij</button></div>
+
+<script>
+"use strict";
+const A = window.Android || null;
+const LS = "snakefeed.data.v1";
+const MONTHS = ["styczeń","luty","marzec","kwiecień","maj","czerwiec","lipiec","sierpień","wrzesień","październik","listopad","grudzień"];
+const MS = ["sty","lut","mar","kwi","maj","cze","lip","sie","wrz","paź","lis","gru"];
+const DOW = ["Pn","Wt","Śr","Cz","Pt","So","Nd"];
+const DOWL = ["nd","pn","wt","śr","cz","pt","so"];
+const DEFAULTS = {
+  boa:   {name:"Boa cesarski", short:"Boa", kind:"boa", age:"3 mies.", length:"ok. 30 cm", weightNote:"200–300 g", prey:"Mysz 30 g", preyG:30, interval:7, lastFed:null, retry:null, shed:null, weights:[], log:[]},
+  pyton: {name:"Pyton królewski (regius)", short:"Pyton", kind:"pyt", age:"", length:"ok. 90 cm", weightNote:"", prey:"Szczur 50–60 g", preyG:55, interval:12, lastFed:null, retry:null, shed:null, weights:[], log:[]}
+};
+
+/* ---------- dates ---------- */
+const pad = n => String(n).padStart(2,"0");
+const iso = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const parse = s => { const [y,m,d] = s.split("-").map(Number); return new Date(y,m-1,d); };
+const addDays = (s,n) => { const d = parse(s); d.setDate(d.getDate()+n); return iso(d); };
+const diff = (a,b) => Math.round((parse(a)-parse(b))/86400000);
+const today = () => iso(new Date());
+const fmt = s => { const d = parse(s); return `${d.getDate()} ${MS[d.getMonth()]}`; };
+const fmtD = s => { const d = parse(s); return `${DOWL[d.getDay()]} ${d.getDate()} ${MS[d.getMonth()]}`; };
+const dni = n => Math.abs(n) === 1 ? "dzień" : "dni";
+const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+/* ---------- state ---------- */
+let S = {};
+let tab = "today", editing = null, selDay = today(), cal = (() => { const d = new Date(); return {y:d.getFullYear(), m:d.getMonth()}; })();
+let confirmImport = false;
+try { tab = localStorage.getItem("snakefeed.tab") || "today"; } catch(e) {}
+
+function firstNum(s){ const m = String(s||"").match(/\d+/); return m ? Number(m[0]) : null; }
+function norm(s, id){
+  const d = DEFAULTS[id] || {kind:"boa", short:id, name:id, interval:7};
+  const o = {...d, ...s};
+  if (!o.weightNote && s.weight) o.weightNote = s.weight;
+  delete o.weight;
+  o.weights = Array.isArray(s.weights) ? s.weights : [];
+  o.log = Array.isArray(s.log) ? s.log : [];
+  o.preyG = Number(o.preyG) || firstNum(o.prey) || d.preyG || 0;
+  o.interval = Math.max(1, Number(o.interval) || 7);
+  o.shed = o.shed || null; o.retry = o.retry || null;
+  return o;
+}
+function load(){
+  let raw = {};
+  try { if (A) { const t = A.load(); raw = t ? JSON.parse(t) : {}; } else { raw = JSON.parse(localStorage.getItem(LS) || "{}"); } } catch(e) { raw = {}; }
+  const fresh = !raw || !Object.keys(raw).length;
+  if (fresh) raw = JSON.parse(JSON.stringify(DEFAULTS));
+  S = {}; for (const [id,s] of Object.entries(raw)) S[id] = norm(s, id);
+  if (fresh) persist();
+}
+function persist(){
+  const j = JSON.stringify(S);
+  try { if (A) A.save(j); else localStorage.setItem(LS, j); } catch(e) { toast("Nie udało się zapisać danych."); }
+}
+const ids = () => Object.keys(S).sort();
+
+/* change with undo */
+function change(fn, msg){
+  const before = JSON.stringify(S);
+  fn(); persist(); render();
+  toast(msg, () => { const raw = JSON.parse(before); S = {}; for (const [id,s] of Object.entries(raw)) S[id] = norm(s,id); persist(); render(); toast("Cofnięto"); });
+}
+
+/* ---------- domain ---------- */
+function nextFeed(s){
+  if (s.retry && (!s.lastFed || s.retry > s.lastFed)) return s.retry;
+  return s.lastFed ? addDays(s.lastFed, s.interval) : null;
+}
+function status(s){
+  if (s.shed) return {st:"shed", n:null, d:null};
+  const n = nextFeed(s); if (!n) return {st:"none", n:null, d:null};
+  const d = diff(n, today());
+  return {st: d < 0 ? "late" : d === 0 ? "due" : "ok", n, d};
+}
+function sortLog(s){ s.log.sort((a,b) => (b.d||"").localeCompare(a.d||"")); s.log = s.log.slice(0,150); }
+function feed(id, d = today()){
+  change(() => {
+    const s = S[id];
+    s.log.push({d, t:"fed", p:s.prey}); sortLog(s);
+    if (!s.lastFed || d >= s.lastFed) s.lastFed = d;
+    if (s.retry && d >= addDays(s.retry,-3)) s.retry = null;
+  }, `${S[id].short}: karmienie ${fmt(d)} zapisane`);
+}
+function refuse(id){
+  change(() => {
+    const s = S[id]; const t = today();
+    s.log.push({d:t, t:"ref", p:s.prey}); sortLog(s);
+    s.retry = addDays(t, 3);
+  }, `${S[id].short}: odmowa, kolejna próba ${fmt(addDays(today(),3))}`);
+}
+function shedToggle(id){
+  const s = S[id];
+  if (!s.shed) change(() => { S[id].shed = today(); }, `${s.short}: wylinka – karmienie wstrzymane`);
+  else change(() => {
+    const x = S[id]; x.log.push({d:x.shed, e:today(), t:"shed"}); sortLog(x); x.shed = null;
+    if (x.lastFed && nextFeed(x) < today()) x.retry = addDays(today(), 1);
+  }, `${s.short}: wylinka zakończona`);
+}
+function lastWeight(s){ return s.weights.length ? s.weights[s.weights.length-1] : null; }
+function preyAdvice(s){
+  const w = lastWeight(s); if (!w) return null;
+  const lo = Math.round(w.g*0.10), hi = Math.round(w.g*0.15), pct = s.preyG ? s.preyG / w.g * 100 : null;
+  let verdict = null;
+  if (pct !== null && pct > 20) verdict = `Obecna ofiara (${s.preyG} g) to ${pct.toFixed(0)}% masy – za duża.`;
+  else if (pct !== null && pct < 7) verdict = `Obecna ofiara (${s.preyG} g) to ${pct.toFixed(0)}% masy – za mała, można zwiększyć.`;
+  return {lo, hi, pct, verdict};
+}
+function intervalAdvice(s){
+  const w = lastWeight(s); if (!w) return null;
+  if (s.kind === "boa") return w.g < 500 ? "co 7 dni" : w.g < 1500 ? "co 10–14 dni" : "co 14–21 dni";
+  return w.g < 300 ? "co 5–7 dni" : w.g < 1000 ? "co 7–10 dni" : "co 10–14 dni";
+}
+function stats(s){
+  const fed = s.log.filter(e => e.t === "fed").map(e => e.d).sort();
+  let avg = null;
+  if (fed.length >= 2) { const last = fed.slice(-6); avg = diff(last[last.length-1], last[0]) / (last.length-1); }
+  const since = addDays(today(), -90);
+  const refs = s.log.filter(e => e.t === "ref" && e.d >= since).length;
+  const sh = s.log.find(e => e.t === "shed");
+  return {avg, refs, shed: sh ? sh.e || sh.d : null, count: fed.length};
+}
+function planDates(s, from, to){
+  const out = [], st = status(s);
+  if (!st.n) return out;
+  let n = st.n < today() ? today() : st.n;
+  while (n <= to) { if (n >= from) out.push(n); n = addDays(n, s.interval); }
+  return out;
+}
+
+/* ---------- render ---------- */
+function render(){
+  document.querySelectorAll("nav.tabs button").forEach(b => b.classList.toggle("on", b.dataset.tab === tab));
+  for (const t of ["today","cal","snakes","settings"]) document.getElementById("tab-"+t).hidden = t !== tab;
+  ({today:renderToday, cal:renderCal, snakes:renderSnakes, settings:renderSettings})[tab]();
+}
+
+function cdCard(id){
+  const s = S[id], st = status(s);
+  let big, sub;
+  if (st.st === "shed") { big = "Wylinka"; sub = `Od ${fmt(s.shed)} · nie karm do końca wylinki`; }
+  else if (st.st === "none") { big = "—"; sub = "Wpisz datę ostatniego karmienia w zakładce Węże"; }
+  else if (st.st === "ok") { big = `${st.d}<small>${dni(st.d)}</small>`; sub = `${fmtD(st.n)} · ${esc(s.prey)}`; }
+  else if (st.st === "due") { big = "Dziś"; sub = `Nakarm: ${esc(s.prey)}`; }
+  else { big = `+${-st.d}<small>${dni(st.d)} po terminie</small>`; sub = `Termin minął ${fmt(st.n)} · ${esc(s.prey)}`; }
+  if (s.retry && st.st !== "shed") sub += " · ponowna próba po odmowie";
+  const due = st.st === "due" || st.st === "late";
+  return `<div class="cd ${s.kind} ${due ? "due" : ""} ${st.st === "shed" ? "shedding" : ""}">
+    <div class="between"><div class="who"><span class="dot ${s.kind}"></span>${esc(s.short)}</div>${s.lastFed ? `<span class="small muted">ostatnio ${fmt(s.lastFed)}</span>` : ""}</div>
+    <div class="big">${big}</div><div class="small">${sub}</div>
+    <div class="acts">
+      ${st.st === "shed"
+        ? `<button type="button" class="primary" data-act="shed" data-id="${id}" style="grid-column:1/-1">Koniec wylinki</button>`
+        : `<button type="button" class="${due || st.st === "none" ? "primary" : ""}" data-act="feed" data-id="${id}">✓ Nakarmiony</button>
+           <button type="button" data-act="refuse" data-id="${id}">Odmówił</button>
+           <button type="button" data-act="shed" data-id="${id}">Wylinka</button>`}
+    </div></div>`;
+}
+function renderToday(){
+  const t = today(), to = addDays(t, 27);
+  const dueNames = ids().filter(id => ["due","late"].includes(status(S[id]).st)).map(id => S[id].short);
+  const sum = dueNames.length ? `<b>Dziś karmisz: ${dueNames.map(esc).join(", ")}</b>` : (() => {
+    const nx = ids().map(id => ({id, st:status(S[id])})).filter(x => x.st.n).sort((a,b) => a.st.n.localeCompare(b.st.n))[0];
+    return nx ? `Najbliższe karmienie: <b>${esc(S[nx.id].short)}</b>, ${fmtD(nx.st.n)}` : "Brak zaplanowanych karmień";
+  })();
+  const ev = [];
+  for (const id of ids()) {
+    const s = S[id], st = status(s);
+    if (st.st === "late") ev.push({d:t, id, late:-st.d});
+    planDates(s, t, to).forEach((d,i) => { if (!(st.st === "late" && i === 0)) ev.push({d, id}); });
+  }
+  ev.sort((a,b) => a.d.localeCompare(b.d) || a.id.localeCompare(b.id));
+  document.getElementById("tab-today").innerHTML = `
+    <div style="display:grid;gap:4px">
+      <div class="eyebrow">${new Date().toLocaleDateString("pl-PL",{weekday:"long", day:"numeric", month:"long"})}</div>
+      <h1>Karmienie węży</h1>
+      <div class="summary">${sum}</div>
+    </div>
+    <div style="display:grid;gap:12px">${ids().map(cdCard).join("")}</div>
+    <div class="card">
+      <h2>Najbliższe 4 tygodnie</h2>
+      ${ev.length ? `<div class="agenda">${ev.map(e => `<div class="ag"><span class="d">${e.d === t ? "Dziś" : e.d === addDays(t,1) ? "Jutro" : fmtD(e.d)}</span><span class="dot ${S[e.id].kind}"></span><span>${esc(S[e.id].short)} <span class="muted small">· ${esc(S[e.id].prey)}</span></span>${e.late ? `<span class="late small">zaległe ${e.late} ${dni(e.late)}</span>` : `<span class="muted small num">${e.d === t ? "" : "za " + diff(e.d,t) + " " + dni(diff(e.d,t))}</span>`}</div>`).join("")}</div>`
+        : `<p class="muted" style="margin:0">Wpisz daty ostatniego karmienia, a plan pojawi się tutaj.</p>`}
+    </div>`;
+}
+
+function renderCal(){
+  const first = new Date(cal.y, cal.m, 1), off = (first.getDay()+6)%7;
+  const start = iso(new Date(cal.y, cal.m, 1-off)), end = addDays(start, 41), t = today();
+  const marks = {}, put = (d,c) => (marks[d] = marks[d] || []).push(c);
+  for (const s of Object.values(S)) {
+    s.log.forEach(e => { if (e.t === "fed") put(e.d, s.kind); if (e.t === "shed") put(e.e || e.d, "shed"); });
+    if (s.shed) put(s.shed, "shed");
+    planDates(s, t, end).forEach(d => put(d, s.kind + " plan"));
+  }
+  let cells = "";
+  for (let i = 0; i < 42; i++) {
+    const d = addDays(start, i), dd = parse(d);
+    cells += `<button type="button" class="day ${dd.getMonth() !== cal.m ? "out" : ""} ${d === t ? "today" : ""} ${d === selDay ? "sel" : ""}" data-day="${d}"><span class="num">${dd.getDate()}</span><span class="marks">${(marks[d]||[]).map(c => `<i class="m ${c}"></i>`).join("")}</span></button>`;
+  }
+  // selected day detail
+  const items = [];
+  for (const id of ids()) {
+    const s = S[id];
+    s.log.forEach(e => {
+      if (e.t === "fed" && e.d === selDay) items.push(`<li><span class="dot ${s.kind}"></span> ${esc(s.short)}: karmienie (${esc(e.p||"")})</li>`);
+      if (e.t === "ref" && e.d === selDay) items.push(`<li><span class="dot ${s.kind}"></span> ${esc(s.short)}: odmowa</li>`);
+      if (e.t === "shed" && (e.e === selDay || e.d === selDay)) items.push(`<li><span class="dot ${s.kind}"></span> ${esc(s.short)}: wylinka</li>`);
+    });
+    if (planDates(s, selDay, selDay).length) items.push(`<li><span class="dot ${s.kind}"></span> ${esc(s.short)}: planowane karmienie</li>`);
+  }
+  const canLog = selDay <= t;
+  document.getElementById("tab-cal").innerHTML = `
+    <h1>Kalendarz</h1>
+    <div class="card">
+      <div class="cal-nav"><button type="button" class="ghost" data-cal="-1" aria-label="Poprzedni miesiąc">←</button><h3>${MONTHS[cal.m]} ${cal.y}</h3><button type="button" class="ghost" data-cal="1" aria-label="Następny miesiąc">→</button></div>
+      <div class="g7">${DOW.map(d => `<div class="dow">${d}</div>`).join("")}</div>
+      <div class="g7">${cells}</div>
+      <div class="legend"><span><i class="m boa"></i>Boa</span><span><i class="m pyt"></i>Pyton</span><span><i class="m plan boa"></i><i class="m plan pyt"></i>plan</span><span><i class="m shed"></i>wylinka</span></div>
+    </div>
+    <div class="card">
+      <h2>${fmtD(selDay)}</h2>
+      ${items.length ? `<ul style="margin:0;padding-left:0;list-style:none;display:grid;gap:6px">${items.join("")}</ul>` : `<p class="muted" style="margin:0">Nic w tym dniu.</p>`}
+      ${canLog ? `<div class="row">${ids().map(id => `<button type="button" class="sm" data-act="feedOn" data-id="${id}">+ Karmienie: ${esc(S[id].short)}</button>`).join("")}</div>` : ""}
+    </div>`;
+}
+
+function chartSvg(s){
+  const w = s.weights; if (w.length < 2) return "";
+  const W = 320, H = 130, L = 34, R = 10, T = 10, B = 22;
+  const xs = w.map(p => parse(p.d).getTime()), ys = w.map(p => p.g);
+  const x0 = Math.min(...xs), x1 = Math.max(...xs) || x0 + 1;
+  let y0 = Math.min(...ys), y1 = Math.max(...ys); const padY = Math.max(10, (y1-y0)*0.15); y0 = Math.max(0, y0-padY); y1 = y1+padY;
+  const X = v => L + (v-x0)/((x1-x0)||1)*(W-L-R), Y = v => T + (1-(v-y0)/((y1-y0)||1))*(H-T-B);
+  const pts = w.map(p => `${X(parse(p.d).getTime()).toFixed(1)},${Y(p.g).toFixed(1)}`).join(" ");
+  const ticks = [y0, (y0+y1)/2, y1].map(v => `<line class="grid" x1="${L}" x2="${W-R}" y1="${Y(v)}" y2="${Y(v)}"/><text x="${L-4}" y="${Y(v)+3}" text-anchor="end">${Math.round(v)}</text>`).join("");
+  return `<div class="chart ${s.kind}"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Wykres masy">${ticks}
+    <polyline class="ln" points="${pts}"/>${w.map(p => `<circle class="pt" r="3.5" cx="${X(parse(p.d).getTime())}" cy="${Y(p.g)}"/>`).join("")}
+    <text x="${L}" y="${H-6}">${fmt(w[0].d)}</text><text x="${W-R}" y="${H-6}" text-anchor="end">${fmt(w[w.length-1].d)}</text></svg></div>`;
+}
+function renderSnakes(){
+  const html = ids().map(id => {
+    const s = S[id], st = status(s), lw = lastWeight(s), pa = preyAdvice(s), ia = intervalAdvice(s), stt = stats(s);
+    const pill = st.st === "shed" ? `<span class="pill shed">wylinka</span>` : st.st === "none" ? `<span class="pill">brak daty</span>`
+      : st.d <= 0 ? `<span class="pill due">${st.d === 0 ? "karmienie dziś" : `${-st.d} ${dni(st.d)} po terminie`}</span>` : `<span class="pill ok">za ${st.d} ${dni(st.d)}</span>`;
+    const f = (k,l,type="text",extra="") => `<label class="f" for="e-${id}-${k}">${l}<input id="e-${id}-${k}" name="${k}" type="${type}" value="${esc(s[k] ?? "")}" ${extra}></label>`;
+    return `<article class="card snake ${s.kind}"><div class="stripe"></div><div class="in">
+      <div class="between"><div><h2>${esc(s.name)}</h2><div class="muted small">${[s.age, s.length].filter(Boolean).map(esc).join(" · ")}</div></div>${pill}</div>
+      <div class="specs">
+        <div class="spec"><span class="eyebrow">Ofiara</span><b>${esc(s.prey)}</b></div>
+        <div class="spec"><span class="eyebrow">Co ile</span><b>${s.interval} dni</b></div>
+        <div class="spec"><span class="eyebrow">Ostatnio</span><b>${s.lastFed ? fmt(s.lastFed) : "—"}</b></div>
+        <div class="spec"><span class="eyebrow">Następne</span><b>${st.n ? fmt(st.n) : "—"}</b></div>
+      </div>
+      <div class="stats">
+        <div class="stat"><span class="eyebrow">Śr. odstęp</span><b>${stt.avg !== null ? stt.avg.toFixed(1) + " d" : "—"}</b></div>
+        <div class="stat"><span class="eyebrow">Odmowy</span><b>${stt.refs}</b></div>
+        <div class="stat"><span class="eyebrow">Wylinka</span><b>${stt.shed ? fmt(stt.shed) : "—"}</b></div>
+      </div>
+
+      <div style="display:grid;gap:10px">
+        <div class="between"><h3>Masa</h3><span class="num"><b>${lw ? lw.g + " g" : esc(s.weightNote || "—")}</b>${lw ? ` <span class="muted small">(${fmt(lw.d)})</span>` : ""}</span></div>
+        ${chartSvg(s)}
+        <div class="advice">
+          ${pa ? `<span>Zalecana ofiara: <b>${pa.lo}–${pa.hi} g</b> (10–15% masy).</span>${pa.verdict ? `<span class="warn">${pa.verdict}</span>` : `<span>Obecna ofiara pasuje.</span>`}` : `<span>Dodaj ważenie, a aplikacja dobierze wielkość ofiary.</span>`}
+          ${ia ? `<span>Orientacyjny odstęp dla tej masy: <b>${ia}</b>.</span>` : ""}
+        </div>
+        <form class="form" data-form="weight" data-id="${id}">
+          <label class="f" for="w-${id}-d">Data<input id="w-${id}-d" name="d" type="date" value="${today()}" max="${today()}"></label>
+          <label class="f" for="w-${id}-g">Masa (g)<input id="w-${id}-g" name="g" type="number" inputmode="numeric" min="1" max="20000" required placeholder="np. 260"></label>
+          <button type="submit">Dodaj ważenie</button>
+        </form>
+        ${s.weights.length ? `<details><summary class="small">Ważenia (${s.weights.length})</summary><ul class="hist">${s.weights.slice().reverse().map((w,i) => `<li><span class="num">${fmt(w.d)}</span><span class="num">${w.g} g</span><button type="button" class="ghost sm" data-act="delW" data-id="${id}" data-i="${s.weights.length-1-i}" aria-label="Usuń ważenie">✕</button></li>`).join("")}</ul></details>` : ""}
+      </div>
+
+      <details><summary>Historia (${s.log.length})</summary>
+        ${s.log.length ? `<ul class="hist">${s.log.slice(0,40).map((e,i) => `<li><span class="num">${fmt(e.d)}</span><span>${e.t === "ref" ? "odmówił" : e.t === "shed" ? `wylinka${e.e && e.e !== e.d ? " do " + fmt(e.e) : ""}` : esc(e.p||"karmienie")}</span><button type="button" class="ghost sm" data-act="delL" data-id="${id}" data-i="${i}" aria-label="Usuń wpis">✕</button></li>`).join("")}</ul>` : `<p class="muted small">Brak wpisów.</p>`}
+      </details>
+
+      <details ${editing === id ? "open" : ""} data-edit="${id}"><summary>Edytuj dane i plan</summary>
+        <form class="form" data-form="edit" data-id="${id}" style="margin-top:10px">
+          ${f("name","Nazwa")}${f("short","Krótka nazwa")}${f("age","Wiek")}${f("length","Długość")}
+          ${f("prey","Ofiara (opis)")}${f("preyG","Masa ofiary (g)","number",'min="1" max="5000"')}
+          ${f("interval","Co ile dni","number",'min="1" max="60" required')}${f("lastFed","Ostatnie karmienie","date",`max="${today()}"`)}
+          <button type="submit" class="primary full">Zapisz</button>
+        </form>
+      </details>
+    </div></article>`;
+  }).join("");
+  document.getElementById("tab-snakes").innerHTML = `<h1>Węże</h1>${html}`;
+}
+
+function renderSettings(){
+  const native = !!A;
+  let hour = 18, notif = "na", ver = "";
+  if (native) { try { hour = A.getReminderHour(); notif = A.notifState(); ver = A.version(); } catch(e) {} }
+  const hours = [`<option value="-1" ${hour < 0 ? "selected" : ""}>Wyłączone</option>`].concat(Array.from({length:17}, (_,i) => i+6).map(h => `<option value="${h}" ${h === hour ? "selected" : ""}>${pad(h)}:00</option>`)).join("");
+  document.getElementById("tab-settings").innerHTML = `
+    <h1>Ustawienia</h1>
+    ${native ? `<div class="card">
+      <h2>Przypomnienia</h2>
+      <p class="muted small" style="margin:0">Powiadomienie w dniu karmienia i przy zaległym karmieniu. Z powiadomienia od razu oznaczysz „Nakarmiony”.</p>
+      <label class="f" for="remHour">Godzina przypomnienia<select id="remHour">${hours}</select></label>
+      ${notif === "denied" ? `<div class="confirm"><span>Powiadomienia są wyłączone dla aplikacji.</span><button type="button" class="primary" data-act="notif">Włącz powiadomienia</button></div>` : `<span class="pill ok">Powiadomienia włączone</span>`}
+    </div>` : ""}
+    <div class="card">
+      <h2>Widget na pulpit</h2>
+      <ul class="small" style="margin:0;padding-left:18px;display:grid;gap:4px">
+        <li>Przytrzymaj palec na pustym miejscu pulpitu → <b>Widżety</b> → <b>Karmienie węży</b>.</li>
+        <li>Wybierz: Boa, Pyton albo oba węże.</li>
+        <li>W dniu karmienia na widgecie pojawia się przycisk <b>✓ Nakarmiony</b>.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h2>Kopia zapasowa</h2>
+      <p class="muted small" style="margin:0">Zapisz kopię przed zmianą telefonu albo reinstalacją.</p>
+      <div class="row">${native ? `<button type="button" data-act="share">Udostępnij kopię</button>` : ""}<button type="button" data-act="copy">Kopiuj do schowka</button></div>
+      <label class="f" for="importBox">Wczytaj kopię (wklej tekst)<textarea id="importBox" placeholder='{"boa":{…},"pyton":{…}}'></textarea></label>
+      ${confirmImport ? `<div class="confirm"><span>Wczytanie zastąpi obecne dane. Kontynuować?</span><div class="row"><button type="button" class="primary" data-act="importYes">Tak, wczytaj</button><button type="button" data-act="importNo">Anuluj</button></div></div>` : `<button type="button" data-act="import">Wczytaj kopię</button>`}
+    </div>
+    <div class="card tips">
+      <h2>Zasady karmienia</h2>
+      <ul>
+        <li>Ofiara ok. 10–15% masy węża (najszersze miejsce ofiary ≈ najszersze miejsce węża).</li>
+        <li>Boa 200–300 g → mysz ok. 25–40 g. Szczur 50–60 g dopiero przy masie ok. 400–500 g.</li>
+        <li>Nie karm w trakcie wylinki. Po karmieniu nie dotykaj węża przez 48 h.</li>
+        <li>Odmowa: spróbuj ponownie za 3–7 dni. Odmowy pytona zimą zdarzają się często.</li>
+        <li>Waż węża co 2–4 tygodnie – aplikacja dobierze ofiarę do masy.</li>
+      </ul>
+    </div>
+    ${ver ? `<p class="muted small" style="text-align:center;margin:0">Wersja ${esc(ver)}</p>` : ""}`;
+}
+
+/* ---------- events (delegated) ---------- */
+document.addEventListener("click", e => {
+  const tb = e.target.closest("nav.tabs button");
+  if (tb) { tab = tb.dataset.tab; try { localStorage.setItem("snakefeed.tab", tab); } catch(x) {} render(); window.scrollTo(0,0); return; }
+  const dayB = e.target.closest("[data-day]");
+  if (dayB) { selDay = dayB.dataset.day; renderCal(); return; }
+  const cb = e.target.closest("[data-cal]");
+  if (cb) { cal.m += Number(cb.dataset.cal); if (cal.m < 0) { cal.m = 11; cal.y--; } if (cal.m > 11) { cal.m = 0; cal.y++; } renderCal(); return; }
+  const b = e.target.closest("[data-act]"); if (!b) return;
+  const id = b.dataset.id, act = b.dataset.act;
+  if (act === "feed") feed(id);
+  else if (act === "feedOn") feed(id, selDay);
+  else if (act === "refuse") refuse(id);
+  else if (act === "shed") shedToggle(id);
+  else if (act === "delW") change(() => S[id].weights.splice(Number(b.dataset.i),1), "Usunięto ważenie");
+  else if (act === "delL") change(() => {
+    const s = S[id]; s.log.splice(Number(b.dataset.i),1);
+    const lf = s.log.find(x => x.t === "fed"); s.lastFed = lf ? lf.d : null;
+  }, "Usunięto wpis");
+  else if (act === "notif") { try { A.requestNotif(); } catch(x) {} }
+  else if (act === "share") { try { A.share(JSON.stringify(S)); } catch(x) { toast("Nie udało się udostępnić."); } }
+  else if (act === "copy") {
+    const txt = JSON.stringify(S);
+    const fallback = () => { const box = document.getElementById("importBox"); box.value = txt; box.select(); toast("Zaznaczono tekst – skopiuj go ręcznie"); };
+    try { navigator.clipboard.writeText(txt).then(() => toast("Skopiowano kopię do schowka"), fallback); } catch(x) { fallback(); }
+  }
+  else if (act === "import") {
+    try { const o = JSON.parse(document.getElementById("importBox").value); if (!o || typeof o !== "object" || !Object.keys(o).length) throw 0; confirmImport = true; renderSettings(); }
+    catch(x) { toast("To nie jest poprawna kopia. Wklej cały tekst kopii."); }
+  }
+  else if (act === "importNo") { confirmImport = false; renderSettings(); }
+  else if (act === "importYes") {
+    try {
+      const o = JSON.parse(document.getElementById("importBox").value);
+      change(() => { S = {}; for (const [k,s] of Object.entries(o)) S[k] = norm(s,k); }, "Wczytano kopię");
+    } catch(x) { toast("Nie udało się wczytać kopii."); }
+    confirmImport = false; renderSettings();
+  }
+});
+document.addEventListener("submit", e => {
+  const f = e.target.closest("form[data-form]"); if (!f) return;
+  e.preventDefault();
+  const id = f.dataset.id, fd = new FormData(f);
+  if (f.dataset.form === "weight") {
+    const g = Math.round(Number(fd.get("g"))), d = String(fd.get("d") || today());
+    if (!g || g < 1) { toast("Wpisz masę w gramach."); return; }
+    change(() => { const s = S[id]; s.weights = s.weights.filter(w => w.d !== d); s.weights.push({d, g}); s.weights.sort((a,b) => a.d.localeCompare(b.d)); s.weights = s.weights.slice(-120); }, `${S[id].short}: ${g} g zapisane`);
+  } else {
+    change(() => {
+      const s = S[id];
+      ["name","short","age","length","prey"].forEach(k => s[k] = String(fd.get(k) || "").trim() || s[k]);
+      s.preyG = Number(fd.get("preyG")) || firstNum(s.prey) || s.preyG;
+      s.interval = Math.max(1, Math.min(60, parseInt(fd.get("interval"),10) || s.interval));
+      const lf = String(fd.get("lastFed") || "");
+      if (lf && lf !== s.lastFed) { s.lastFed = lf; s.retry = null; if (!s.log.some(x => x.t === "fed" && x.d === lf)) { s.log.push({d:lf, t:"fed", p:s.prey}); sortLog(s); } }
+      editing = null;
+    }, "Zapisano zmiany");
+  }
+});
+document.addEventListener("change", e => {
+  if (e.target.id === "remHour" && A) { try { A.setReminderHour(Number(e.target.value)); toast(Number(e.target.value) < 0 ? "Przypomnienia wyłączone" : `Przypomnienie o ${pad(Number(e.target.value))}:00`); } catch(x) {} }
+});
+document.addEventListener("toggle", e => { if (e.target.dataset && e.target.dataset.edit) editing = e.target.open ? e.target.dataset.edit : (editing === e.target.dataset.edit ? null : editing); }, true);
+
+let tt;
+function toast(msg, undo){
+  const t = document.getElementById("toast"), u = document.getElementById("toastUndo");
+  document.getElementById("toastMsg").textContent = msg;
+  u.hidden = !undo; u.onclick = () => { t.hidden = true; clearTimeout(tt); if (undo) undo(); };
+  t.hidden = false; clearTimeout(tt); tt = setTimeout(() => t.hidden = true, undo ? 5000 : 2600);
+}
+
+/* ---------- boot ---------- */
+load(); render();
+window.onAppResume = () => { load(); render(); };
+window.onBack = () => { if (tab !== "today") { tab = "today"; render(); window.scrollTo(0,0); return true; } return false; };
+document.addEventListener("visibilitychange", () => { if (!document.hidden) { load(); render(); } });
+</script>
+</body></html>

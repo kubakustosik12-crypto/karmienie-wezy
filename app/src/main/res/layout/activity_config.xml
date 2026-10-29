@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="24dp">
+    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp" android:text="Który wąż na widgecie?"
+        android:textSize="20sp" android:textStyle="bold" />
+    <Button android:id="@+id/opt_boa" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="Boa cesarski" />
+    <Button android:id="@+id/opt_pyton" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="Pyton regius" />
+    <Button android:id="@+id/opt_all" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="Oba węże" />
+</LinearLayout>

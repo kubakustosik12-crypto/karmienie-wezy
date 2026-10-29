@@ -1,0 +1,35 @@
+plugins { id 'com.android.application' }
+
+def runNumber = (System.getenv('GITHUB_RUN_NUMBER') ?: '1').toInteger()
+
+android {
+    namespace 'pl.markii.wezy'
+    compileSdk 34
+    defaultConfig {
+        applicationId 'pl.markii.wezy'
+        minSdk 26
+        targetSdk 34
+        versionCode runNumber
+        versionName "2.0.${runNumber}"
+    }
+    signingConfigs {
+        // Stały klucz: każda nowa wersja instaluje się na starej bez utraty danych.
+        release {
+            storeFile file('wezy.jks')
+            storeType 'jks'
+            storePassword 'wezy1234'
+            keyAlias 'wezy'
+            keyPassword 'wezy1234'
+        }
+    }
+    buildTypes {
+        release {
+            signingConfig signingConfigs.release
+            minifyEnabled false
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}

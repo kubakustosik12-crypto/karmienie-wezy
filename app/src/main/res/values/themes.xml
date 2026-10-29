@@ -1,0 +1,7 @@
+<resources>
+    <style name="AppTheme" parent="@android:style/Theme.Material.Light.NoActionBar">
+        <item name="android:statusBarColor">@color/accent</item>
+        <item name="android:windowBackground">@color/bg</item>
+    </style>
+    <style name="ConfigTheme" parent="@android:style/Theme.Material.Light.Dialog.NoActionBar" />
+</resources>

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_widget"
+    android:orientation="vertical"
+    android:padding="14dp">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1"
+        android:gravity="center_vertical" android:orientation="horizontal">
+        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+            android:orientation="vertical">
+            <TextView android:id="@+id/boa_name" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="Boa" android:textColor="#E98A60" android:textSize="14sp" android:textStyle="bold" />
+            <TextView android:id="@+id/boa_sub" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:ellipsize="end" android:maxLines="1" android:text="dni do karmienia"
+                android:textColor="#93A194" android:textSize="11sp" />
+        </LinearLayout>
+        <TextView android:id="@+id/boa_days" android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:paddingStart="6dp" android:text="—" android:textColor="#FFFFFF" android:textSize="28sp" android:textStyle="bold" />
+        <TextView android:id="@+id/boa_feed" android:layout_width="34dp" android:layout_height="34dp"
+            android:layout_marginStart="6dp" android:background="@drawable/bg_check" android:gravity="center"
+            android:text="✓" android:textColor="#0E1A0B" android:textSize="17sp" android:textStyle="bold"
+            android:visibility="gone" />
+    </LinearLayout>
+    <LinearLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1"
+        android:gravity="center_vertical" android:orientation="horizontal">
+        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+            android:orientation="vertical">
+            <TextView android:id="@+id/pyt_name" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="Pyton" android:textColor="#D9B84E" android:textSize="14sp" android:textStyle="bold" />
+            <TextView android:id="@+id/pyt_sub" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:ellipsize="end" android:maxLines="1" android:text="dni do karmienia"
+                android:textColor="#93A194" android:textSize="11sp" />
+        </LinearLayout>
+        <TextView android:id="@+id/pyt_days" android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:paddingStart="6dp" android:text="—" android:textColor="#FFFFFF" android:textSize="28sp" android:textStyle="bold" />
+        <TextView android:id="@+id/pyt_feed" android:layout_width="34dp" android:layout_height="34dp"
+            android:layout_marginStart="6dp" android:background="@drawable/bg_check" android:gravity="center"
+            android:text="✓" android:textColor="#0E1A0B" android:textSize="17sp" android:textStyle="bold"
+            android:visibility="gone" />
+    </LinearLayout>
+</LinearLayout>

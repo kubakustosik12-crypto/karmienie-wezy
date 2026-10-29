@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Karmienie węży</string>
+    <string name="widget_name">Karmienie węży</string>
+    <string name="widget_desc">Ile dni do karmienia</string>
+</resources>
